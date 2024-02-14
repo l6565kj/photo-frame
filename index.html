@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>六五相框程序</title>
+    <style>
+        body {
+            text-align: center;
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f2f2f2;
+        }
+
+        #header {
+            background-color: #0e0e0e;
+            padding: 10px;
+            color: white;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-radius: 10px;
+            margin: 10px;
+        }
+
+        #settings {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 10px;
+        }
+
+        #settings label {
+            color: white;
+        }
+
+        #settings input {
+            padding: 5px;
+            border-radius: 5px;
+        }
+
+        #dropArea {
+            border: 2px dashed #ccc;
+            padding: 20px;
+            margin: 20px;
+            border-radius: 10px;
+            background-color: white;
+            cursor: pointer;
+        }
+
+        #result {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            margin: 20px;
+        }
+
+        img {
+            max-width: 100%;
+            max-height: 300px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            margin: 10px;
+            border-radius: 5px;
+        }
+
+        #buttons {
+            display: flex;
+            gap: 20px;
+            margin-top: 20px;
+        }
+
+        .button {
+            padding: 10px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        #downloadAllButton {
+            background-color: #008CBA;
+        }
+    </style>
+</head>
+<body>
+    <div id="header">
+        <div id="settings">
+            <div class="control-group">
+                <label for="topBorder">上边框：</label>
+                <input type="number" id="topBorder" value="100" min="0">
+            </div>
+            
+            <div class="control-group">
+                <label for="bottomBorder">下边框：</label>
+                <input type="number" id="bottomBorder" value="300" min="0">
+            </div>
+            
+            <div class="control-group">
+                <label for="leftBorder">左边框：</label>
+                <input type="number" id="leftBorder" value="100" min="0">
+            </div>
+            
+            <div class="control-group">
+                <label for="rightBorder">右边框：</label>
+                <input type="number" id="rightBorder" value="100" min="0">
+            </div>
+            
+            <div class="control-group">
+                <label for="textSize">文字大小：</label>
+                <input type="number" id="textSize" value="100" min="1">
+            </div>
+            
+            <div class="control-group">
+                <label for="customText">自定义水印：</label>
+                <input type="text" id="customText" value="BOJU WANG">
+            </div>
+            
+            <div class="control-group">
+                <label for="textVerticalPosition">水印垂直位置调整：</label>
+                <input type="number" id="textVerticalPosition" value="220">
+            </div>
+        </div>
+
+        <div id="buttons">
+            <button class="button" onclick="saveImage()">保存图片</button>
+            <button id="downloadAllButton" class="button" onclick="saveAllImages()">批量下载</button>
+        </div>
+    </div>
+
+    <div id="dropArea" onclick="uploadFile()" ondrop="drop(event)" ondragover="allowDrop(event)">
+        <p>点击或拖放图片到此处</p>
+    </div>
+
+    <div id="result">
+        <!-- Images will be displayed here -->
+    </div>
+
+    <script>
+        function allowDrop(event) {
+            event.preventDefault();
+            document.getElementById('dropArea').style.border = '2px dashed #4CAF50';
+        }
+
+        function drop(event) {
+            event.preventDefault();
+            document.getElementById('dropArea').style.border = '2px dashed #ccc';
+
+            const files = event.dataTransfer.files;
+            if (files.length > 0) {
+                handleFiles(files);
+            }
+        }
+
+        function uploadFile() {
+            const input = document.createElement('input');
+            input.type = 'file';
+            input.accept = 'image/*';
+            input.onchange = function (event) {
+                handleFiles(event.target.files);
+            };
+            input.click();
+        }
+
+    function handleFiles(files) {
+    const resultContainer = document.getElementById('result');
+    
+    for (const file of files) {
+        const reader = new FileReader();
+        reader.onload = function (e) {
+            const image = new Image();
+            image.src = e.target.result;
+            image.onload = function () {
+                const canvas = document.createElement('canvas');
+                const context = canvas.getContext('2d');
+
+                const topBorder = parseInt(document.getElementById('topBorder').value);
+                const bottomBorder = parseInt(document.getElementById('bottomBorder').value);
+                const leftBorder = parseInt(document.getElementById('leftBorder').value);
+                const rightBorder = parseInt(document.getElementById('rightBorder').value);
+
+                // Calculate canvas size
+                canvas.width = image.width + leftBorder + rightBorder;
+                canvas.height = image.height + topBorder + bottomBorder;
+
+                // Add white border
+                context.fillStyle = 'white';
+                context.fillRect(0, 0, canvas.width, canvas.height);
+                context.drawImage(image, leftBorder, topBorder, image.width, image.height);
+
+                // Add text
+                const textSize = parseInt(document.getElementById('textSize').value);
+                const customText = document.getElementById('customText').value;
+                const textVerticalPosition = parseInt(document.getElementById('textVerticalPosition').value);
+
+                // Original watermark
+                context.font = `${textSize}px Arial`;
+                context.fillStyle = 'black';
+                const currentDate = new Date();
+                const formattedDate = `${currentDate.getFullYear()}/${(currentDate.getMonth() + 1).toString().padStart(2, '0')}/${currentDate.getDate().toString().padStart(2, '0')}`;
+                const fullText = `${customText} - ${formattedDate}`;
+                const textWidth = context.measureText(fullText).width;
+                const textX = (canvas.width - textWidth) / 2;
+                const textY = canvas.height - bottomBorder + textVerticalPosition;
+                context.fillText(fullText, textX, textY);
+
+                // Temporary canvas for diagonal watermark
+                const tempCanvas = document.createElement('canvas');
+                const tempContext = tempCanvas.getContext('2d');
+                tempCanvas.width = canvas.width;
+                tempCanvas.height = canvas.height;
+
+                // Set transparency for diagonal watermark
+                tempContext.globalAlpha = 0.03;
+                tempContext.font = `${textSize}px Arial`;
+                tempContext.fillStyle = 'blue';
+                tempContext.translate(textX, textY);
+                tempContext.rotate(-Math.PI / 4);
+                tempContext.fillText("     六五溯源: " + fullText, 0, 0);
+                tempContext.rotate(Math.PI / 4);
+                tempContext.translate(-textX, -textY);
+                tempContext.globalAlpha = 1;
+
+                // Merge the two canvases
+                context.drawImage(tempCanvas, 0, 0);
+
+                // Display the merged image
+                const resultImage = new Image();
+                resultImage.src = canvas.toDataURL('image/png');
+                resultImage.alt = 'Edited Image';
+                resultContainer.appendChild(resultImage);
+            };
+        };
+        reader.readAsDataURL(file);
+    }
+}
+        function saveImage() {
+            const editedImage = document.querySelector('#result img:last-child');
+            if (editedImage) {
+                const link = document.createElement('a');
+                link.href = editedImage.src;
+                link.download = '6565TECH_edited_image.png';
+                link.click();
+            } else {
+                alert('请先拖入图片');
+            }
+        }
+
+        function saveAllImages() {
+            const resultImages = document.querySelectorAll('#result img');
+            if (resultImages.length === 0) {
+                alert('请先拖入图片');
+                return;
+            }
+
+            const zip = new JSZip();
+            const promises = [];
+
+            resultImages.forEach((image, index) => {
+                promises.push(new Promise((resolve) => {
+                    const img = new Image();
+                    img.src = image.src;
+                    img.onload = function () {
+                        const canvas = document.createElement('canvas');
+                        const context = canvas.getContext('2d');
+
+                        canvas.width = img.width;
+                        canvas.height = img.height;
+
+                        context.drawImage(img, 0, 0);
+
+                        const dataUrl = canvas.toDataURL('image/png').replace(/^data:image\/(png|jpg);base64,/, "");
+                        zip.file(`image_${index + 1}.png`, dataUrl, { base64: true });
+
+                        resolve();
+                    };
+                }));
+            });
+
+            Promise.all(promises).then(() => {
+                zip.generateAsync({ type: "blob" })
+                    .then((content) => {
+                        saveAs(content, '6565TECH_batch_images.zip');
+                    });
+            });
+        }
+    </script>
+<!--    <script src="https://cdn.jsdelivr.net/g/filesaver.js"></script>
+    <script src="https://cdn.jsdelivr.net/g/jszip@3"></script>-->
+    <script src="filesaver.js"></script>
+    <script src="jszip@3"></script>
+</body>
+</html>
